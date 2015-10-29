@@ -5,5 +5,4 @@ package com.asu.arithmeticprobe.bo;
  */
 public class Conatiner
 {
-	
 }
