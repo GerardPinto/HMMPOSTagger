@@ -8,5 +8,6 @@
 	<classpathentry kind="lib" path="lib/stanford-corenlp-3.5.2.jar"/>
 	<classpathentry kind="lib" path="lib/xom.jar"/>
 	<classpathentry kind="lib" path="lib/jaws-bin.jar"/>
+	<classpathentry kind="lib" path="lib/ws4j-1.0.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

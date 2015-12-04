@@ -1,11 +1,12 @@
 package com.asu.arithmeticprobe.test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 import edu.stanford.nlp.ling.CoreAnnotations;
-import edu.stanford.nlp.ling.CoreAnnotations.NamedEntityTagAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.pipeline.Annotation;
@@ -13,7 +14,6 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation;
 import edu.stanford.nlp.semgraph.SemanticGraphEdge;
-import edu.stanford.nlp.trees.GrammaticalRelation;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations;
 import edu.stanford.nlp.util.CoreMap;
@@ -28,9 +28,11 @@ public class ParserTest
 	/**
 	 * 
 	 */
-	private static final String    sentence = "The weather is perfect during the growing season , so he harvests 684 bushels of wheat than expected .";
-	private static StanfordCoreNLP stanfordCoreNLP;
-	private static Annotation      annotation;
+	private static final String            sentence = "Last week Fred had 23 dollars and Jason had 46 dollars . Fred washed cars over the weekend and now he has 86 dollars . How much money did Fred make washing cars ? ";
+	private static StanfordCoreNLP         stanfordCoreNLP;
+	private static Annotation              annotation;
+	public static HashMap<String, Integer> verbMean;
+	
 	static
 	{
 		Properties properties = new Properties();
@@ -61,9 +63,12 @@ public class ParserTest
 	
 	/**
 	 * @param annotation
+	 * @return
 	 */
-	private static void printPOSTags(Annotation annotation)
+	private static List<HashMap<String, Integer>> printPOSTags(
+	        Annotation annotation)
 	{
+		HashMap<String, String> lemmaVerbs = new HashMap<String, String>();
 		HashMap<String, HashMap<String, String>> dependencies = new HashMap<String, HashMap<String, String>>();
 		List<CoreMap> sentences = annotation
 		        .get(CoreAnnotations.SentencesAnnotation.class);
@@ -77,13 +82,15 @@ public class ParserTest
 			for (CoreLabel token : sentence
 			        .get(CoreAnnotations.TokensAnnotation.class))
 			{
-				String namedEntityTag = token
-				        .get(NamedEntityTagAnnotation.class);
 				String word = token.get(CoreAnnotations.TextAnnotation.class);
 				String pos = token
 				        .get(CoreAnnotations.PartOfSpeechAnnotation.class);
+				String lemma = token
+				        .getString(CoreAnnotations.LemmaAnnotation.class);
+				
 				if (pos.contains("VB"))
 				{
+					lemmaVerbs.put(word, lemma);
 					dependencies.put(word, new HashMap<String, String>());
 				}
 			}
@@ -92,22 +99,38 @@ public class ParserTest
 			{
 				IndexedWord dep = semanticGraphEdge.getDependent();
 				String dependent = dep.word();
-				int dependent_index = dep.index();
 				IndexedWord gov = semanticGraphEdge.getGovernor();
-				String governor = gov.word();
-				int governor_index = gov.index();
-				GrammaticalRelation relation = semanticGraphEdge.getRelation();
-				
-				if (dependencies.containsKey(governor))
+				String governor = gov.originalText();
+				if (dependencies.containsKey(governor)
+				        && semanticGraphEdge.getRelation().toString()
+				                .equals("nsubj"))
 				{
 					dependencies.get(governor).put(dependent,
 					        semanticGraphEdge.getRelation().toString());
 				}
-				
 			}
-			
-			System.out.println(dependencies);
 		}
+		
+		System.out.println(lemmaVerbs);
+		System.out.println(dependencies);
+		
+		List<HashMap<String, Integer>> verbMean = new ArrayList<HashMap<String, Integer>>();
+		for (Entry<String, String> entry : lemmaVerbs.entrySet())
+		{
+			String word = entry.getKey();
+			String lemma = entry.getValue();
+			
+			if (dependencies.get(word) != null
+			        && !dependencies.get(word).isEmpty())
+			{
+				HashMap<String, Integer> verbMeanScore = new HashMap<String, Integer>();
+				verbMeanScore.put(lemma, 0);
+				verbMean.add(verbMeanScore);
+			}
+		}
+		
+		return verbMean;
+		
 	}
 	
 	/**
